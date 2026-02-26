@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Esquelas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="config.js"></script>
+<style>
+/* =============================================
+   VARIABLES Y RESET
+============================================= */
+:root {
+  --ui-bg: #f3f3f1;
+  --ui-panel: #ffffff;
+  --ui-sidebar: #1a1a1e;
+  --ui-sidebar-text: #d8d8d2;
+  --ui-sidebar-muted: #888882;
+  --ui-border: #e0e0da;
+  --ui-accent: #2c2c2c;
+  --ui-accent2: #5a5a52;
+  --ui-btn-primary: #1a1a1e;
+  --ui-btn-primary-text: #ffffff;
+  --ui-btn-secondary: #f0f0ec;
+  --ui-btn-secondary-text: #1a1a1e;
+  --ui-input-border: #d0d0ca;
+  --ui-input-focus: #8a8a82;
+  --ui-danger: #8a2020;
+  --ui-label: #3a3a38;
+  --ui-section-head: #242424;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--ui-bg);
+  color: var(--ui-accent);
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+/* =============================================
+   TOPBAR
+============================================= */
+#topbar {
+  background: var(--ui-sidebar);
+  color: var(--ui-sidebar-text);
+  padding: 0 20px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  border-bottom: 1px solid #2e2e34;
+  z-index: 100;
+}
+#topbar h1 {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e8e8e2;
+}
+#topbar-right { display: flex; align-items: center; gap: 10px; }
+#btn-import-top {
+  background: transparent;
+  border: 1px solid #3a3a42;
+  color: var(--ui-sidebar-muted);
+  padding: 6px 14px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+#btn-import-top:hover { border-color: #888882; color: var(--ui-sidebar-text); }
+#import-file-input { display: none; }
+
+/* =============================================
+   MAIN LAYOUT
+============================================= */
+#main-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+@media (max-width: 900px) {
+  #main-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  #controls-panel { max-height: 45vh; }
+}
+
+/* =============================================
+   CONTROLS PANEL
+============================================= */
+#controls-panel {
+  background: var(--ui-panel);
+  border-right: 1px solid var(--ui-border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#controls-panel::-webkit-scrollbar { width: 4px; }
+#controls-panel::-webkit-scrollbar-track { background: transparent; }
+#controls-panel::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+.ctrl-section {
+  padding: 16px 18px 10px;
+  border-bottom: 1px solid var(--ui-border);
+}
+.ctrl-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ui-sidebar-muted);
+  margin-bottom: 12px;
+}
+.ctrl-row { margin-bottom: 8px; }
+.ctrl-label {
+  display: block;
+  font-size: 11px;
+  color: var(--ui-label);
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+input[type="text"],
+input[type="file"]::file-selector-button,
+textarea,
+select {
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid var(--ui-input-border);
+  background: #fafafa;
+  font-size: 12px;
+  color: var(--ui-accent);
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+  border-radius: 2px;
+}
+input[type="text"]:focus,
+textarea:focus,
+select:focus { border-color: var(--ui-input-focus); background: #fff; }
+textarea { resize: vertical; min-height: 52px; line-height: 1.5; }
+select { cursor: pointer; }
+input[type="file"] {
+  width: 100%;
+  padding: 5px 0;
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* Mass fields */
+#mass-fields { margin-top: 4px; }
+.mass-group { margin-top: 6px; padding: 8px; background: #f8f8f6; border: 1px solid #e8e8e2; }
+.mass-group-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-sidebar-muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: none;
+  border-radius: 2px;
+  transition: background 0.18s, opacity 0.18s;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--ui-btn-primary); color: #fff; }
+.btn-primary:hover { background: #333; }
+.btn-secondary { background: var(--ui-btn-secondary); color: var(--ui-btn-secondary-text); border: 1px solid #d8d8d2; }
+.btn-secondary:hover { background: #e8e8e2; }
+.btn-danger { background: #fff; color: var(--ui-danger); border: 1px solid #d0a0a0; }
+.btn-danger:hover { background: #fff0f0; }
+.btn-rand {
+  background: #f0f0ec;
+  color: #2a2a28;
+  border: 1px solid #d8d8d2;
+  width: 100%;
+  margin-bottom: 5px;
+  text-align: left;
+  padding-left: 10px;
+}
+.btn-rand:hover { background: #e4e4de; }
+.btn-grand {
+  width: 100%;
+  padding: 10px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  background: #1a1a1e;
+  color: #fff;
+  margin-bottom: 5px;
+}
+.btn-grand:hover { background: #2e2e36; }
+.btn-row { display: flex; gap: 6px; margin-bottom: 5px; }
+.btn-row .btn { flex: 1; }
+.btn-download {
+  margin: 14px 18px;
+  width: calc(100% - 36px);
+  padding: 12px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: #1a1a1e;
+  color: #fff;
+}
+.btn-download:hover { background: #2e2e36; }
+
+/* Sliders */
+.slider-row { margin-bottom: 10px; }
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+.slider-label { font-size: 11px; color: var(--ui-label); font-weight: 500; }
+.slider-value { font-size: 10px; color: var(--ui-sidebar-muted); font-weight: 600; min-width: 28px; text-align: right; }
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: #e0e0da;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  background: #1a1a1e;
+  border-radius: 50%;
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  background: #1a1a1e;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+/* =============================================
+   PREVIEW PANEL
+============================================= */
+#preview-panel {
+  background: #e8e8e4;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  padding: 20px;
+}
+#preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+#preview-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #888880;
+  font-weight: 500;
+}
+
+/* =============================================
+   ESQUELA CONTAINER  (A4: 210:297)
+============================================= */
+#esquela {
+  position: relative;
+  width: 480px;
+  height: 678px; /* 480 * 297/210 = 678.86 */
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.22);
+  flex-shrink: 0;
+
+  /* Base font size, updated by JS based on actual width */
+  --base: 13.7px;
+
+  /* Block scale custom properties */
+  --bs1: 1;
+  --bs2: 1;
+  --bs3: 1;
+  --bs4: 1;
+  --bs5: 1;
+
+  /* Font family/weight/style custom properties (set by JS) */
+  --fn-family: serif;
+  --fn-weight: 700; --fn-style: normal; --fn-ls: 0.05em; --fn-tt: none;
+  --fd-family: sans-serif;
+  --fd-weight: 400; --fd-style: normal; --fd-ls: 0.1em; --fd-tt: uppercase;
+  --fs-family: serif;
+  --fs-weight: 400; --fs-style: normal; --fs-ls: 0.15em; --fs-tt: uppercase;
+  --fsb-family: serif;
+  --fsb-weight: 400; --fsb-style: normal; --fsb-ls: 0.02em; --fsb-tt: none;
+  --fp-family: cursive;
+  --fp-weight: 400; --fp-style: normal; --fp-ls: 0.02em; --fp-tt: none;
+  --fc-family: serif;
+  --fc-weight: 400; --fc-style: italic; --fc-ls: 0.08em; --fc-tt: none;
+
+  /* Color custom properties (set by JS) */
+  --c-bg: #ffffff;
+  --c-bg2: #f0f0ee;
+  --c-text: #1a1a1a;
+  --c-muted: #555550;
+  --c-name: #080808;
+  --c-subtitle: #222220;
+  --c-deco: #888880;
+  --c-border: #3a3a3a;
+  --c-company: #6a6a60;
+  --c-accent: #2a2a2a;
+  --c-shadow: rgba(0,0,0,0.25);
+}
+
+/* Background layer */
+#esq-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Decoration border layer */
+#esq-deco-border {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+#esq-deco-border svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Decoration corners */
+#esq-deco-corners {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.deco-corner {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+}
+.deco-corner.tl { top: 0; left: 0; }
+.deco-corner.tr { top: 0; right: 0; transform: scaleX(-1); }
+.deco-corner.bl { bottom: 0; left: 0; transform: scaleY(-1); }
+.deco-corner.br { bottom: 0; right: 0; transform: scale(-1,-1); }
+
+/* Blocks container */
+#esq-blocks {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 16px 16px 70px; /* bottom pad leaves room for block 5 */
+  gap: 0;
+  min-height: 100%;
+}
+
+/* Individual blocks */
+.esq-block {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+/* Block 1 — Photo */
+.esq-block-photo {
+  padding: 10px 0 8px;
+}
+.photo-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.photo-wrapper img {
+  display: block;
+  object-fit: cover;
+  transition: width 0.1s, height 0.1s;
+}
+/* Photo shapes */
+.photo-shape-circle img { border-radius: 50%; }
+.photo-shape-oval img { border-radius: 50% / 40%; }
+.photo-shape-rounded img { border-radius: 12%; }
+.photo-shape-square img { border-radius: 0; }
+/* Photo borders */
+.photo-border-thin img { border: 1px solid var(--c-border); }
+.photo-border-medium img { border: 2.5px solid var(--c-border); }
+.photo-border-none img { border: none; }
+.photo-border-blur img {
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 55%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 55%, transparent 100%);
+  border: none;
+}
+/* Photo shadow */
+.photo-shadow img {
+  filter: drop-shadow(0 3px 10px var(--c-shadow));
+}
+
+/* Block 2 — Name + Dates */
+.esq-block-name {
+  padding: 8px 0;
+}
+.esq-name {
+  font-family: var(--fn-family);
+  font-weight: var(--fn-weight);
+  font-style: var(--fn-style);
+  letter-spacing: var(--fn-ls);
+  text-transform: var(--fn-tt);
+  color: var(--c-name);
+  font-size: calc(var(--base) * 2.1 * var(--bs2));
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.esq-name-extra {
+  font-family: var(--fd-family);
+  font-weight: var(--fd-weight);
+  font-style: var(--fd-style);
+  letter-spacing: calc(var(--fd-ls) * 1.5);
+  text-transform: uppercase;
+  color: var(--c-muted);
+  font-size: calc(var(--base) * 0.72 * var(--bs2));
+  margin-bottom: 6px;
+}
+.esq-dates {
+  font-family: var(--fd-family);
+  font-weight: var(--fd-weight);
+  font-style: var(--fd-style);
+  letter-spacing: var(--fd-ls);
+  text-transform: var(--fd-tt);
+  color: var(--c-muted);
+  font-size: calc(var(--base) * 0.82 * var(--bs2));
+  line-height: 1.6;
+}
+
+/* Block 3 — Phrase */
+.esq-block-phrase {
+  padding: 10px 14px;
+}
+.esq-phrase {
+  font-family: var(--fp-family);
+  font-weight: var(--fp-weight);
+  font-style: var(--fp-style);
+  letter-spacing: var(--fp-ls);
+  text-transform: var(--fp-tt);
+  color: var(--c-text);
+  font-size: calc(var(--base) * 1.55 * var(--bs3));
+  line-height: 1.4;
+}
+
+/* Block 4 — Subtitles */
+.esq-block-subtitles {
+  padding: 8px 10px;
+  width: 100%;
+}
+.esq-subtitle-section { margin-bottom: 8px; }
+.esq-subtitle-head {
+  font-family: var(--fs-family);
+  font-weight: var(--fs-weight);
+  font-style: var(--fs-style);
+  letter-spacing: var(--fs-ls);
+  text-transform: var(--fs-tt);
+  color: var(--c-subtitle);
+  font-size: calc(var(--base) * 0.95 * var(--bs4));
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.esq-subtitle-body {
+  font-family: var(--fsb-family);
+  font-weight: var(--fsb-weight);
+  font-style: var(--fsb-style);
+  letter-spacing: var(--fsb-ls);
+  text-transform: var(--fsb-tt);
+  color: var(--c-text);
+  font-size: calc(var(--base) * 0.78 * var(--bs4));
+  line-height: 1.55;
+}
+.esq-misas-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+/* Block dividers */
+.esq-divider {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+/* Block 5 — Company Phrase (ABSOLUTE at bottom) */
+#esq-block5 {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  text-align: center;
+  padding: 10px 16px 12px;
+}
+.esq-company {
+  font-family: var(--fc-family);
+  font-weight: var(--fc-weight);
+  font-style: var(--fc-style);
+  letter-spacing: var(--fc-ls);
+  text-transform: var(--fc-tt);
+  color: var(--c-company);
+  font-size: calc(var(--base) * 0.7 * var(--bs5));
+}
+
+/* Logo */
+#esq-logo {
+  position: absolute;
+  z-index: 4;
+  display: none;
+}
+/* Logo corners */
+#esq-logo.corner-tl { top: 10px; left: 10px; }
+#esq-logo.corner-tr { top: 10px; right: 10px; }
+#esq-logo.corner-bl { bottom: 40px; left: 10px; }
+#esq-logo.corner-br { bottom: 40px; right: 10px; }
+
+/* Moño */
+#esq-mono {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  display: none;
+}
+
+/* Loading overlay */
+#loading-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: white;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+#loading-overlay.active { display: flex; }
+.spinner {
+  width: 28px; height: 28px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Placeholder photo */
+.photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e8e2;
+  border: 1px dashed #b0b0a8;
+  color: #a0a098;
+  font-size: calc(var(--base) * 0.7);
+  font-family: var(--fsb-family);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <span id="loading-text">Procesando...</span>
+</div>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <h1>Generador de Esquelas</h1>
+  <div id="topbar-right">
+    <button class="btn btn-import-top" id="btn-import-top" onclick="document.getElementById('import-file-input').click()">Importar Esquela</button>
+    <input type="file" id="import-file-input" accept=".json">
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div id="main-layout">
+
+  <!-- ===================== CONTROLS PANEL ===================== -->
+  <div id="controls-panel">
+
+    <!-- SECCION: Contenido -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Contenido de la Esquela</div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Foto de la persona</label>
+        <input type="file" id="input-photo" accept="image/*">
+      </div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Relación de aspecto de la foto</label>
+        <select id="input-photo-ratio">
+          <option value="1:1" selected>1:1 (Cuadrado)</option>
+          <option value="4:5">4:5 (Retrato)</option>
+          <option value="3:4">3:4 (Retrato clásico)</option>
+          <option value="2:3">2:3 (Retrato largo)</option>
+          <option value="4:3">4:3 (Paisaje)</option>
+          <option value="16:9">16:9 (Panorámico)</option>
+        </select>
+      </div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Nombre del fallecido</label>
+        <input type="text" id="input-name" placeholder="Nombre completo" value="">
+      </div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Texto adicional (Q.E.P.D., D.E.P., etc.)</label>
+        <input type="text" id="input-name-extra" placeholder="Q.E.P.D." value="Q.E.P.D.">
+      </div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Fecha de nacimiento</label>
+        <input type="text" id="input-birth" placeholder="Ej: 15 de Marzo de 1945" value="">
+      </div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Fecha de fallecimiento</label>
+        <input type="text" id="input-death" placeholder="Ej: 22 de Enero de 2024" value="">
+      </div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Frase conmemorativa</label>
+        <textarea id="input-phrase" placeholder="Ej: Gracias por el amor compartido...">Gracias por el amor compartido, tu recuerdo vivirá eternamente en nuestros corazones.</textarea>
+      </div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Texto de Homenaje de Vida y Amor</label>
+        <textarea id="input-tribute" placeholder="Texto del homenaje...">La familia agradece su presencia y solidaridad en este momento de dolor.</textarea>
+      </div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Número de misas</label>
+        <select id="input-mass-count">
+          <option value="0">Sin misa</option>
+          <option value="1" selected>Una misa</option>
+          <option value="2">Dos misas</option>
+        </select>
+      </div>
+
+      <div id="mass-fields">
+        <div id="mass1-group" class="mass-group">
+          <div class="mass-group-title">Misa</div>
+          <div class="ctrl-row" style="margin-bottom:4px">
+            <label class="ctrl-label">Detalles (fecha, hora, lugar)</label>
+            <textarea id="input-mass1" style="min-height:48px" placeholder="Ej: Sábado 27 de Enero, 10:00 hrs.&#10;Parroquia de San Juan Bautista, Av. Hidalgo 123">Sábado 27 de Enero, 10:00 hrs.
+Parroquia de San Juan Bautista</textarea>
+          </div>
+        </div>
+        <div id="mass2-group" class="mass-group" style="display:none; margin-top:5px">
+          <div class="mass-group-title">Segunda Misa</div>
+          <div class="ctrl-row" style="margin-bottom:4px">
+            <label class="ctrl-label">Detalles (fecha, hora, lugar)</label>
+            <textarea id="input-mass2" style="min-height:48px" placeholder="Ej: Domingo 28 de Enero, 12:00 hrs.&#10;Capilla del Sagrado Corazón"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="ctrl-row" style="margin-top:8px">
+        <label class="ctrl-label">Tipo de disposición final</label>
+        <select id="input-burial-type">
+          <option value="Inhumación" selected>Inhumación</option>
+          <option value="Cremación">Cremación</option>
+        </select>
+      </div>
+
+      <div class="ctrl-row">
+        <label class="ctrl-label">Detalles de inhumación / cremación</label>
+        <textarea id="input-burial" style="min-height:48px" placeholder="Fecha, hora y lugar...">Inmediatamente después de la misa.
+Jardines del Recuerdo, Av. Principal s/n</textarea>
+      </div>
+    </div>
+
+    <!-- SECCION: Diseño -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Diseño y Apariencia</div>
+
+      <button class="btn btn-grand" id="btn-rand-all">Randomizar Todo</button>
+
+      <button class="btn btn-rand" id="btn-rand-order">Randomizar Orden de Bloques</button>
+      <button class="btn btn-rand" id="btn-rand-fonts">Randomizar Fuentes de Texto</button>
+
+      <div class="btn-row">
+        <button class="btn btn-rand" id="btn-rand-colors" style="margin-bottom:0">Randomizar Colores</button>
+      </div>
+
+      <button class="btn btn-rand" id="btn-rand-bg">Randomizar Fondo</button>
+      <button class="btn btn-rand" id="btn-rand-photo-style">Randomizar Foto</button>
+      <button class="btn btn-rand" id="btn-rand-decos">Randomizar Decoraciones</button>
+      <button class="btn btn-danger btn-rand" id="btn-no-decos" style="background:#fff8f8">Quitar Decoraciones</button>
+      <button class="btn btn-rand" id="btn-rand-mono">Randomizar Moño</button>
+    </div>
+
+    <!-- SECCION: Tamaños -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Tamaño de Bloques</div>
+
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Bloque 1 — Foto</span>
+          <span class="slider-value" id="sv-b1">1.00</span>
+        </div>
+        <input type="range" id="sl-b1" min="0.4" max="2.5" step="0.05" value="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Bloque 2 — Nombre y Fechas</span>
+          <span class="slider-value" id="sv-b2">1.00</span>
+        </div>
+        <input type="range" id="sl-b2" min="0.4" max="2.5" step="0.05" value="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Bloque 3 — Frase Conmemorativa</span>
+          <span class="slider-value" id="sv-b3">1.00</span>
+        </div>
+        <input type="range" id="sl-b3" min="0.4" max="2.5" step="0.05" value="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Bloque 4 — Misas e Inhumación</span>
+          <span class="slider-value" id="sv-b4">1.00</span>
+        </div>
+        <input type="range" id="sl-b4" min="0.4" max="2.5" step="0.05" value="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Bloque 5 — Frase Empresarial</span>
+          <span class="slider-value" id="sv-b5">1.00</span>
+        </div>
+        <input type="range" id="sl-b5" min="0.4" max="2.5" step="0.05" value="1">
+      </div>
+
+      <div class="ctrl-section-title" style="margin-top:10px">Tamaño de Logo y Moño</div>
+
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Logo</span>
+          <span class="slider-value" id="sv-logo">1.00</span>
+        </div>
+        <input type="range" id="sl-logo" min="0.3" max="2.5" step="0.05" value="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Moño de luto</span>
+          <span class="slider-value" id="sv-mono">1.00</span>
+        </div>
+        <input type="range" id="sl-mono" min="0.3" max="2.5" step="0.05" value="1">
+      </div>
+    </div>
+
+    <!-- DESCARGAR -->
+    <button class="btn btn-download" id="btn-download">Descargar Esquela</button>
+
+  </div><!-- end controls-panel -->
+
+  <!-- ===================== PREVIEW PANEL ===================== -->
+  <div id="preview-panel">
+    <div id="preview-wrapper">
+      <div id="preview-label">Vista previa — Formato A4</div>
+
+      <!-- THE ESQUELA -->
+      <div id="esquela">
+        <!-- Background -->
+        <div id="esq-bg"></div>
+        <!-- Decoration border -->
+        <div id="esq-deco-border"></div>
+        <!-- Decoration corners -->
+        <div id="esq-deco-corners"></div>
+
+        <!-- Blocks container -->
+        <div id="esq-blocks">
+          <!-- Blocks 1-4 rendered here dynamically -->
+        </div>
+
+        <!-- Block 5: Always at bottom, absolute -->
+        <div id="esq-block5">
+          <div class="esq-company">Mas allá de un servicio, un homenaje a la vida</div>
+        </div>
+
+        <!-- Logo -->
+        <img id="esq-logo" src="logo.png" alt="Logo" crossorigin="anonymous">
+
+        <!-- Moño -->
+        <img id="esq-mono" alt="Moño" crossorigin="anonymous">
+      </div><!-- end #esquela -->
+
+    </div>
+  </div><!-- end preview-panel -->
+
+</div><!-- end main-layout -->
+
+<script>
+// ============================================================
+// APP STATE
+// ============================================================
+var S = {
+  // Content
+  name: '',
+  nameExtra: 'Q.E.P.D.',
+  birthDate: '',
+  deathDate: '',
+  phrase: 'Gracias por el amor compartido, tu recuerdo vivirá eternamente en nuestros corazones.',
+  tributeText: 'La familia agradece su presencia y solidaridad en este momento de dolor.',
+  massCount: 1,
+  mass1: 'Sábado 27 de Enero, 10:00 hrs.\nParroquia de San Juan Bautista',
+  mass2: '',
+  burialType: 'Inhumación',
+  burialText: 'Inmediatamente después de la misa.\nJardines del Recuerdo, Av. Principal s/n',
+
+  // Photo
+  photoDataURL: null,
+  photoAspectRatio: '1:1',
+  photoShape: 'circle',
+  photoBorder: 'thin',
+  photoShadow: false,
+
+  // Appearance
+  paletteId: 'gris-sobrio',
+  fontPairingId: 'pairing-01',
+  blockOrder: [1, 2, 3, 4],  // block 5 always appended
+  decorationId: 'none',
+  background: { type: 'solid', imageUrl: null, seed: 1 },
+
+  // Logo
+  logoCorner: 'top-right',
+  logoScale: 1,
+
+  // Moño
+  monoFile: null,
+  monoPosition: 'bottom-left',
+  monoScale: 1,
+
+  // Block scales
+  bs: [1, 1, 1, 1, 1], // index 0..4 = blocks 1..5
+
+  // Background image cache (base64 for export)
+  bgImageB64: null,
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function permute(arr) {
+  if (arr.length <= 1) return [[...arr]];
+  var result = [];
+  for (var i = 0; i < arr.length; i++) {
+    var rest = arr.filter(function(_, j){ return j !== i; });
+    permute(rest).forEach(function(p){ result.push([arr[i]].concat(p)); });
+  }
+  return result;
+}
+
+function getValidBlockOrders() {
+  var orders = [];
+  // Group A: block 4 is last among {1,2,3,4}
+  // Any permutation of [1,2,3] then 4
+  permute([1,2,3]).forEach(function(p){ orders.push(p.concat([4])); });
+  // Group B: block 4 then block 3 at end, blocks 1,2 in any order before
+  permute([1,2]).forEach(function(p){ orders.push(p.concat([4,3])); });
+  return orders;
+}
+
+function getPaletteById(id) {
+  return PALETTES.find(function(p){ return p.id === id; }) || PALETTES[0];
+}
+function getFontPairingById(id) {
+  return FONT_PAIRINGS.find(function(p){ return p.id === id; }) || FONT_PAIRINGS[0];
+}
+function getDecoById(id) {
+  return DECORATION_STYLES.find(function(d){ return d.id === id; }) || DECORATION_STYLES[0];
+}
+
+// ============================================================
+// FONT LOADING
+// ============================================================
+function loadFontPairing(pairing, callback) {
+  var old = document.getElementById('dynamic-gfonts');
+  if (old) old.remove();
+  var link = document.createElement('link');
+  link.id = 'dynamic-gfonts';
+  link.rel = 'stylesheet';
+  var families = pairing.googleFonts.map(function(f){ return 'family=' + f; }).join('&');
+  link.href = 'https://fonts.googleapis.com/css2?' + families + '&display=swap';
+  link.onload = function(){ document.fonts.ready.then(callback); };
+  link.onerror = callback;
+  document.head.appendChild(link);
+}
+
+function applyFontPairing(pairing) {
+  var e = document.getElementById('esquela');
+  var map = [
+    ['nameFont',        '--fn-family','--fn-weight','--fn-style','--fn-ls','--fn-tt'],
+    ['dateFont',        '--fd-family','--fd-weight','--fd-style','--fd-ls','--fd-tt'],
+    ['subtitleFont',    '--fs-family','--fs-weight','--fs-style','--fs-ls','--fs-tt'],
+    ['subtitleBodyFont','--fsb-family','--fsb-weight','--fsb-style','--fsb-ls','--fsb-tt'],
+    ['phraseFont',      '--fp-family','--fp-weight','--fp-style','--fp-ls','--fp-tt'],
+    ['companyFont',     '--fc-family','--fc-weight','--fc-style','--fc-ls','--fc-tt'],
+  ];
+  map.forEach(function(row){
+    var f = pairing[row[0]];
+    e.style.setProperty(row[1], f.family);
+    e.style.setProperty(row[2], f.weight);
+    e.style.setProperty(row[3], f.style);
+    e.style.setProperty(row[4], f.letterSpacing);
+    e.style.setProperty(row[5], f.textTransform);
+  });
+}
+
+// ============================================================
+// PALETTE APPLICATION
+// ============================================================
+function applyPalette(palette) {
+  var e = document.getElementById('esquela');
+  e.style.setProperty('--c-bg', palette.bg);
+  e.style.setProperty('--c-bg2', palette.bgAlt);
+  e.style.setProperty('--c-text', palette.text);
+  e.style.setProperty('--c-muted', palette.textMuted);
+  e.style.setProperty('--c-name', palette.nameColor);
+  e.style.setProperty('--c-subtitle', palette.subtitleColor);
+  e.style.setProperty('--c-deco', palette.decorationColor);
+  e.style.setProperty('--c-border', palette.borderColor);
+  e.style.setProperty('--c-company', palette.companyColor);
+  e.style.setProperty('--c-accent', palette.accentColor);
+  e.style.setProperty('--c-shadow', palette.photoShadowColor);
+}
+
+// ============================================================
+// BACKGROUND RENDERING
+// ============================================================
+function renderBackground() {
+  var bg = document.getElementById('esq-bg');
+  var palette = getPaletteById(S.paletteId);
+  var b = S.background;
+
+  bg.style.cssText = '';
+  bg.innerHTML = '';
+
+  switch(b.type) {
+    case 'solid':
+      bg.style.background = palette.bg;
+      break;
+
+    case 'gradient-linear':
+      bg.style.background = 'linear-gradient(160deg, ' + palette.gradientStart + ' 0%, ' + palette.gradientEnd + ' 100%)';
+      break;
+
+    case 'gradient-radial':
+      bg.style.background = 'radial-gradient(ellipse at 50% 30%, ' + palette.bg + ' 0%, ' + palette.gradientEnd + ' 100%)';
+      break;
+
+    case 'gradient-top':
+      bg.style.background = 'linear-gradient(to bottom, ' + palette.gradientEnd + ' 0%, ' + palette.bg + ' 40%, ' + palette.bg + ' 100%)';
+      break;
+
+    case 'pattern-dots':
+      bg.style.background = palette.bg;
+      bg.style.backgroundImage = 'radial-gradient(circle, ' + palette.decorationColor + '30 1px, transparent 1px)';
+      bg.style.backgroundSize = '14px 14px';
+      break;
+
+    case 'pattern-lines':
+      bg.style.background = palette.bg;
+      bg.style.backgroundImage = 'repeating-linear-gradient(0deg, ' + palette.decorationColor + '18 0px, ' + palette.decorationColor + '18 1px, transparent 1px, transparent 16px)';
+      break;
+
+    case 'pattern-crosshatch':
+      bg.style.background = palette.bg;
+      bg.style.backgroundImage =
+        'repeating-linear-gradient(45deg, ' + palette.decorationColor + '14 0px, ' + palette.decorationColor + '14 1px, transparent 1px, transparent 10px),' +
+        'repeating-linear-gradient(-45deg, ' + palette.decorationColor + '14 0px, ' + palette.decorationColor + '14 1px, transparent 1px, transparent 10px)';
+      break;
+
+    case 'pattern-grid':
+      bg.style.background = palette.bg;
+      bg.style.backgroundImage =
+        'linear-gradient(' + palette.decorationColor + '20 1px, transparent 1px),' +
+        'linear-gradient(90deg, ' + palette.decorationColor + '20 1px, transparent 1px)';
+      bg.style.backgroundSize = '20px 20px';
+      break;
+
+    case 'image-full':
+      if (b.imageUrl) {
+        bg.style.backgroundImage = 'url(' + b.imageUrl + ')';
+        bg.style.backgroundSize = 'cover';
+        bg.style.backgroundPosition = 'center';
+        bg.style.opacity = '0.25';
+      } else {
+        bg.style.background = palette.bg;
+      }
+      break;
+
+    case 'image-vignette':
+      if (b.imageUrl) {
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:absolute;inset:0;background-image:url(' + b.imageUrl + ');background-size:cover;background-position:center;opacity:0.18;';
+        bg.appendChild(overlay);
+        var vignette = document.createElement('div');
+        vignette.style.cssText = 'position:absolute;inset:0;background:radial-gradient(ellipse at center, ' + palette.bg + '00 0%, ' + palette.bg + ' 65%);';
+        bg.appendChild(vignette);
+        var fill = document.createElement('div');
+        fill.style.cssText = 'position:absolute;inset:0;background:' + palette.bg + ';opacity:0.45;';
+        bg.appendChild(fill);
+      } else {
+        bg.style.background = palette.bg;
+      }
+      break;
+
+    default:
+      bg.style.background = palette.bg;
+  }
+}
+
+// ============================================================
+// DECORATIONS
+// ============================================================
+function renderDecorations() {
+  var deco = getDecoById(S.decorationId);
+  var palette = getPaletteById(S.paletteId);
+  var color = palette.decorationColor;
+  var esq = document.getElementById('esquela');
+  var borderDiv = document.getElementById('esq-deco-border');
+  var cornersDiv = document.getElementById('esq-deco-corners');
+
+  borderDiv.innerHTML = '';
+  cornersDiv.innerHTML = '';
+
+  if (!deco || deco.id === 'none') return;
+
+  var w = esq.offsetWidth;
+  var h = esq.offsetHeight;
+
+  if (deco.hasBorder && deco.borderSVG) {
+    borderDiv.innerHTML = deco.borderSVG(color, w, h);
+  }
+
+  if (deco.hasCorners && deco.cornerSVG) {
+    var positions = ['tl','tr','bl','br'];
+    positions.forEach(function(pos){
+      var div = document.createElement('div');
+      div.className = 'deco-corner ' + pos;
+      div.innerHTML = deco.cornerSVG(color);
+      cornersDiv.appendChild(div);
+    });
+  }
+
+  // Dividers are rendered inline within blocks
+}
+
+function getDividerHTML() {
+  var deco = getDecoById(S.decorationId);
+  var palette = getPaletteById(S.paletteId);
+  if (!deco || !deco.hasDividers || !deco.dividerSVG) return '';
+  return '<div class="esq-divider">' + deco.dividerSVG(palette.decorationColor) + '</div>';
+}
+
+// ============================================================
+// BLOCK RENDERING FUNCTIONS
+// ============================================================
+function buildBlock1() {
+  var div = document.createElement('div');
+  div.className = 'esq-block esq-block-photo';
+  div.dataset.block = '1';
+  div.dataset.blockId = 'b1';
+
+  var ratio = S.photoAspectRatio.split(':').map(Number);
+  var baseW = 160;
+  var baseH = ratio[1] / ratio[0] * baseW;
+
+  var wrapClass = 'photo-wrapper';
+  wrapClass += ' photo-shape-' + S.photoShape;
+  wrapClass += ' photo-border-' + S.photoBorder;
+  if (S.photoShadow) wrapClass += ' photo-shadow';
+
+  var imgStyle = 'width:calc(var(--base)*' + (baseW/13.7).toFixed(2) + '*var(--bs1));height:calc(var(--base)*' + (baseH/13.7).toFixed(2) + '*var(--bs1));';
+
+  var imgContent = '';
+  if (S.photoDataURL) {
+    imgContent = '<img src="' + S.photoDataURL + '" style="' + imgStyle + '" alt="Foto">';
+  } else {
+    imgContent = '<div class="photo-placeholder" style="' + imgStyle + '">Foto</div>';
+  }
+
+  div.innerHTML = '<div class="' + wrapClass + '">' + imgContent + '</div>';
+  return div;
+}
+
+function buildBlock2() {
+  var div = document.createElement('div');
+  div.className = 'esq-block esq-block-name';
+  div.dataset.block = '2';
+
+  var html = '';
+  if (S.name) {
+    html += '<div class="esq-name">' + esc(S.name) + '</div>';
+  }
+  if (S.nameExtra) {
+    html += '<div class="esq-name-extra">' + esc(S.nameExtra) + '</div>';
+  }
+  if (S.birthDate || S.deathDate) {
+    var dates = [];
+    if (S.birthDate) dates.push(esc(S.birthDate));
+    if (S.deathDate) dates.push(esc(S.deathDate));
+    html += '<div class="esq-dates">' + dates.join('<br>') + '</div>';
+  }
+  if (!html) {
+    html = '<div class="esq-name" style="opacity:0.3">Nombre del Fallecido</div>';
+  }
+  div.innerHTML = html;
+  return div;
+}
+
+function buildBlock3() {
+  var div = document.createElement('div');
+  div.className = 'esq-block esq-block-phrase';
+  div.dataset.block = '3';
+  div.innerHTML = '<div class="esq-phrase">' + esc(S.phrase || '') + '</div>';
+  return div;
+}
+
+function buildBlock4() {
+  var div = document.createElement('div');
+  div.className = 'esq-block esq-block-subtitles';
+  div.dataset.block = '4';
+
+  var html = '';
+
+  // Homenaje de Vida y Amor
+  html += '<div class="esq-subtitle-section">';
+  html += '<div class="esq-subtitle-head">Homenaje de Vida y Amor</div>';
+  if (S.tributeText) {
+    html += '<div class="esq-subtitle-body">' + escNL(S.tributeText) + '</div>';
+  }
+  html += '</div>';
+
+  // Misa(s)
+  if (S.massCount > 0) {
+    html += getDividerHTML();
+    html += '<div class="esq-subtitle-section">';
+    if (S.massCount === 1) {
+      html += '<div class="esq-subtitle-head">Misa</div>';
+      html += '<div class="esq-subtitle-body">' + escNL(S.mass1 || '') + '</div>';
+    } else {
+      html += '<div class="esq-subtitle-head">Misas</div>';
+      html += '<div class="esq-misas-two-col">';
+      html += '<div class="esq-subtitle-body">' + escNL(S.mass1 || '') + '</div>';
+      html += '<div class="esq-subtitle-body">' + escNL(S.mass2 || '') + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Inhumación / Cremación
+  html += getDividerHTML();
+  html += '<div class="esq-subtitle-section">';
+  html += '<div class="esq-subtitle-head">' + esc(S.burialType) + '</div>';
+  html += '<div class="esq-subtitle-body">' + escNL(S.burialText || '') + '</div>';
+  html += '</div>';
+
+  div.innerHTML = html;
+  return div;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escNL(s) {
+  return esc(s).replace(/\n/g,'<br>');
+}
+
+// ============================================================
+// BLOCK ORDER + MAIN RENDER
+// ============================================================
+function renderBlocks() {
+  var container = document.getElementById('esq-blocks');
+  container.innerHTML = '';
+
+  var builders = {
+    1: buildBlock1,
+    2: buildBlock2,
+    3: buildBlock3,
+    4: buildBlock4,
+  };
+
+  S.blockOrder.forEach(function(num, idx) {
+    if (num === 5) return;
+    var block = builders[num]();
+    container.appendChild(block);
+
+    // Add divider after block (except last)
+    var nextBlocks = S.blockOrder.slice(idx + 1).filter(function(n){ return n !== 5; });
+    if (nextBlocks.length > 0) {
+      var decoDiv = document.createElement('div');
+      decoDiv.className = 'esq-divider-wrap';
+      decoDiv.innerHTML = getDividerHTML();
+      container.appendChild(decoDiv);
+    }
+  });
+
+  // Update block scale CSS vars
+  for (var i = 0; i < 5; i++) {
+    document.getElementById('esquela').style.setProperty('--bs' + (i+1), S.bs[i]);
+  }
+}
+
+// ============================================================
+// LOGO RENDER
+// ============================================================
+function renderLogo() {
+  var logo = document.getElementById('esq-logo');
+  var baseSize = 60 * S.logoScale;
+  logo.style.width = baseSize + 'px';
+  logo.style.height = 'auto';
+  logo.className = 'corner-' + S.logoCorner;
+  logo.style.display = 'block';
+}
+
+// ============================================================
+// MONO RENDER
+// ============================================================
+function renderMono() {
+  var mono = document.getElementById('esq-mono');
+  if (!S.monoFile) {
+    mono.style.display = 'none';
+    return;
+  }
+  var size = 80 * S.monoScale;
+  mono.src = S.monoFile;
+  mono.style.width = size + 'px';
+  mono.style.height = 'auto';
+  mono.style.display = 'block';
+
+  var esq = document.getElementById('esquela');
+  var ew = esq.offsetWidth;
+  var eh = esq.offsetHeight;
+
+  var positions = {
+    'top-left':       { top: '8px',   left: '8px',   bottom: '', right: '' },
+    'top-right':      { top: '8px',   right: '8px',  bottom: '', left: '' },
+    'bottom-left':    { bottom: '40px', left: '8px',  top: '', right: '' },
+    'bottom-right':   { bottom: '40px', right: '8px', top: '', left: '' },
+    'center-left':    { top: '50%',   left: '4px',   bottom: '', right: '', transform: 'translateY(-50%)' },
+    'center-right':   { top: '50%',   right: '4px',  bottom: '', left: '', transform: 'translateY(-50%)' },
+    'photo-bl':       { top: '0px',   left: '0px',   bottom: '', right: '' },   // fallback, will be updated
+    'photo-br':       { top: '0px',   right: '0px',  bottom: '', left: '' },
+  };
+
+  var pos = positions[S.monoPosition] || positions['bottom-left'];
+  mono.style.top = pos.top || '';
+  mono.style.left = pos.left || '';
+  mono.style.right = pos.right || '';
+  mono.style.bottom = pos.bottom || '';
+  mono.style.transform = pos.transform || '';
+
+  // If photo-attached, calculate after layout
+  if (S.monoPosition === 'photo-bl' || S.monoPosition === 'photo-br') {
+    requestAnimationFrame(function(){
+      var photoBlock = esq.querySelector('[data-block="1"]');
+      if (!photoBlock) return;
+      var pRect = photoBlock.getBoundingClientRect();
+      var eRect = esq.getBoundingClientRect();
+      var relBottom = pRect.bottom - eRect.top;
+      var relLeft = pRect.left - eRect.left;
+      var relRight = eRect.right - pRect.right;
+      mono.style.top = (relBottom - size * 0.4) + 'px';
+      if (S.monoPosition === 'photo-bl') {
+        mono.style.left = Math.max(relLeft, 4) + 'px';
+        mono.style.right = '';
+      } else {
+        mono.style.right = Math.max(relRight, 4) + 'px';
+        mono.style.left = '';
+      }
+      mono.style.bottom = '';
+      mono.style.transform = '';
+    });
+  }
+}
+
+// ============================================================
+// FULL UPDATE
+// ============================================================
+function updatePreview() {
+  var palette = getPaletteById(S.paletteId);
+  var pairing = getFontPairingById(S.fontPairingId);
+
+  applyPalette(palette);
+  applyFontPairing(pairing);
+  renderBackground();
+  renderBlocks();
+  renderDecorations();
+  renderLogo();
+  renderMono();
+}
+
+// ============================================================
+// READ INPUTS INTO STATE
+// ============================================================
+function readInputs() {
+  S.name       = document.getElementById('input-name').value;
+  S.nameExtra  = document.getElementById('input-name-extra').value;
+  S.birthDate  = document.getElementById('input-birth').value;
+  S.deathDate  = document.getElementById('input-death').value;
+  S.phrase     = document.getElementById('input-phrase').value;
+  S.tributeText= document.getElementById('input-tribute').value;
+  S.massCount  = parseInt(document.getElementById('input-mass-count').value) || 0;
+  S.mass1      = document.getElementById('input-mass1').value;
+  S.mass2      = document.getElementById('input-mass2').value;
+  S.burialType = document.getElementById('input-burial-type').value;
+  S.burialText = document.getElementById('input-burial').value;
+  S.photoAspectRatio = document.getElementById('input-photo-ratio').value;
+}
+
+function updateMassVisibility() {
+  var count = parseInt(document.getElementById('input-mass-count').value) || 0;
+  document.getElementById('mass1-group').style.display = count >= 1 ? '' : 'none';
+  document.getElementById('mass2-group').style.display = count === 2 ? '' : 'none';
+}
+
+// ============================================================
+// RANDOMIZATION FUNCTIONS
+// ============================================================
+function randomizeOrder() {
+  var orders = getValidBlockOrders();
+  S.blockOrder = rand(orders);
+}
+
+function randomizeFonts() {
+  var pairing = rand(FONT_PAIRINGS);
+  S.fontPairingId = pairing.id;
+  loadFontPairing(pairing, function(){ updatePreview(); });
+  return; // updatePreview called after load
+}
+
+function randomizePhotoStyle() {
+  S.photoShape  = rand(['circle','oval','rounded','square']);
+  S.photoBorder = rand(['none','thin','medium','blur']);
+  S.photoShadow = Math.random() > 0.5;
+}
+
+function randomizeDecos() {
+  // Skip 'none' in random selection
+  var decos = DECORATION_STYLES.filter(function(d){ return d.id !== 'none'; });
+  S.decorationId = rand(decos).id;
+}
+
+function removeDecos() {
+  S.decorationId = 'none';
+}
+
+function randomizeColors() {
+  S.paletteId = rand(PALETTES).id;
+}
+
+function randomizeBackground() {
+  var types = ['solid','gradient-linear','gradient-radial','gradient-top',
+               'pattern-dots','pattern-lines','pattern-crosshatch','pattern-grid',
+               'image-full','image-vignette'];
+  var type = rand(types);
+  var seed = randInt(1, 999);
+  var w = 700; var h = 990;
+  var url = 'https://picsum.photos/seed/' + seed + '/' + w + '/' + h;
+  S.background = { type: type, imageUrl: url, seed: seed };
+}
+
+function randomizeMono() {
+  if (!LISTON_FILES || LISTON_FILES.length === 0) return;
+  S.monoFile = rand(LISTON_FILES);
+  S.monoPosition = rand(['top-left','top-right','bottom-left','bottom-right','center-left','center-right','photo-bl','photo-br']);
+}
+
+function randomizeAll() {
+  randomizeOrder();
+  randomizeColors();
+  randomizeBackground();
+  randomizePhotoStyle();
+  randomizeDecos();
+  randomizeMono();
+  // Fonts last (async)
+  var pairing = rand(FONT_PAIRINGS);
+  S.fontPairingId = pairing.id;
+  loadFontPairing(pairing, function(){ updatePreview(); });
+}
+
+// ============================================================
+// DOWNLOAD PNG
+// ============================================================
+function downloadPNG() {
+  showLoading('Generando imagen...');
+  var esq = document.getElementById('esquela');
+
+  // Temporarily hide photo placeholder outlines for cleaner export
+  document.fonts.ready.then(function(){
+    html2canvas(esq, {
+      scale: 3,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      logging: false,
+    }).then(function(canvas){
+      var link = document.createElement('a');
+      link.download = 'esquela.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+      hideLoading();
+      // Also offer to download config
+      setTimeout(function(){ downloadConfig(); }, 500);
+    }).catch(function(err){
+      hideLoading();
+      alert('Error al generar la imagen. Verifique que las imágenes externas tengan CORS habilitado.\n' + err.message);
+    });
+  });
+}
+
+// ============================================================
+// CONFIG EXPORT / IMPORT
+// ============================================================
+function getExportState() {
+  var state = JSON.parse(JSON.stringify(S)); // deep clone
+  // Photo is already dataURL (base64) in S.photoDataURL
+  // Background image: if it's a URL, store the seed; on import re-fetch
+  // If user uploaded a bg image, store as b64 (not implemented for bg images from URL)
+  return state;
+}
+
+function downloadConfig() {
+  var state = getExportState();
+  var json = JSON.stringify(state, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var link = document.createElement('a');
+  link.download = 'esquela-config.json';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+function importConfig(file) {
+  showLoading('Importando configuración...');
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      var state = JSON.parse(e.target.result);
+      Object.assign(S, state);
+      applyStateToInputs(S);
+      // Load fonts then update
+      var pairing = getFontPairingById(S.fontPairingId);
+      loadFontPairing(pairing, function(){
+        updatePreview();
+        hideLoading();
+      });
+    } catch(err) {
+      hideLoading();
+      alert('Error al importar: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function applyStateToInputs(s) {
+  document.getElementById('input-name').value        = s.name || '';
+  document.getElementById('input-name-extra').value  = s.nameExtra || '';
+  document.getElementById('input-birth').value       = s.birthDate || '';
+  document.getElementById('input-death').value       = s.deathDate || '';
+  document.getElementById('input-phrase').value      = s.phrase || '';
+  document.getElementById('input-tribute').value     = s.tributeText || '';
+  document.getElementById('input-mass-count').value  = s.massCount || 0;
+  document.getElementById('input-mass1').value       = s.mass1 || '';
+  document.getElementById('input-mass2').value       = s.mass2 || '';
+  document.getElementById('input-burial-type').value = s.burialType || 'Inhumación';
+  document.getElementById('input-burial').value      = s.burialText || '';
+  document.getElementById('input-photo-ratio').value = s.photoAspectRatio || '1:1';
+
+  // Sliders
+  for (var i = 0; i < 5; i++) {
+    var sl = document.getElementById('sl-b' + (i+1));
+    if (sl) {
+      sl.value = s.bs[i] || 1;
+      updateSliderDisplay('sl-b' + (i+1), 'sv-b' + (i+1));
+    }
+  }
+  var slLogo = document.getElementById('sl-logo');
+  if (slLogo) { slLogo.value = s.logoScale || 1; updateSliderDisplay('sl-logo','sv-logo'); }
+  var slMono = document.getElementById('sl-mono');
+  if (slMono) { slMono.value = s.monoScale || 1; updateSliderDisplay('sl-mono','sv-mono'); }
+
+  updateMassVisibility();
+}
+
+// ============================================================
+// LOADING HELPERS
+// ============================================================
+function showLoading(msg) {
+  document.getElementById('loading-text').textContent = msg || 'Procesando...';
+  document.getElementById('loading-overlay').classList.add('active');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('active');
+}
+
+// ============================================================
+// SLIDER HELPERS
+// ============================================================
+function updateSliderDisplay(sliderId, valueId) {
+  var sl = document.getElementById(sliderId);
+  var vl = document.getElementById(valueId);
+  if (sl && vl) vl.textContent = parseFloat(sl.value).toFixed(2);
+}
+
+// ============================================================
+// INITIALIZE
+// ============================================================
+function init() {
+  // Load default font pairing
+  var defaultPairing = getFontPairingById(S.fontPairingId);
+  loadFontPairing(defaultPairing, function(){
+    readInputs();
+    updatePreview();
+  });
+
+  // Text/select inputs → live update
+  var textInputs = [
+    'input-name','input-name-extra','input-birth','input-death',
+    'input-phrase','input-tribute','input-mass1','input-mass2',
+    'input-burial','input-burial-type'
+  ];
+  textInputs.forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', function(){ readInputs(); updatePreview(); });
+      el.addEventListener('change', function(){ readInputs(); updatePreview(); });
+    }
+  });
+
+  // Mass count select
+  document.getElementById('input-mass-count').addEventListener('change', function(){
+    readInputs();
+    updateMassVisibility();
+    updatePreview();
+  });
+
+  // Photo aspect ratio
+  document.getElementById('input-photo-ratio').addEventListener('change', function(){
+    S.photoAspectRatio = this.value;
+    updatePreview();
+  });
+
+  // Photo file input
+  document.getElementById('input-photo').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      S.photoDataURL = ev.target.result;
+      updatePreview();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Import
+  document.getElementById('import-file-input').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (file) importConfig(file);
+    this.value = '';
+  });
+
+  // Randomize buttons
+  document.getElementById('btn-rand-all').addEventListener('click', function(){
+    randomizeAll();
+  });
+  document.getElementById('btn-rand-order').addEventListener('click', function(){
+    randomizeOrder(); updatePreview();
+  });
+  document.getElementById('btn-rand-fonts').addEventListener('click', function(){
+    randomizeFonts(); // async, calls updatePreview inside
+  });
+  document.getElementById('btn-rand-colors').addEventListener('click', function(){
+    randomizeColors(); updatePreview();
+  });
+  document.getElementById('btn-rand-bg').addEventListener('click', function(){
+    randomizeBackground(); updatePreview();
+  });
+  document.getElementById('btn-rand-photo-style').addEventListener('click', function(){
+    randomizePhotoStyle(); updatePreview();
+  });
+  document.getElementById('btn-rand-decos').addEventListener('click', function(){
+    randomizeDecos(); updatePreview();
+  });
+  document.getElementById('btn-no-decos').addEventListener('click', function(){
+    removeDecos(); updatePreview();
+  });
+  document.getElementById('btn-rand-mono').addEventListener('click', function(){
+    randomizeMono(); updatePreview();
+  });
+
+  // Download
+  document.getElementById('btn-download').addEventListener('click', downloadPNG);
+
+  // Sliders for blocks
+  for (var i = 0; i < 5; i++) {
+    (function(idx){
+      var sl = document.getElementById('sl-b' + (idx+1));
+      var sv = document.getElementById('sv-b' + (idx+1));
+      sl.addEventListener('input', function(){
+        S.bs[idx] = parseFloat(this.value);
+        sv.textContent = parseFloat(this.value).toFixed(2);
+        document.getElementById('esquela').style.setProperty('--bs' + (idx+1), S.bs[idx]);
+      });
+    })(i);
+  }
+
+  // Logo slider
+  document.getElementById('sl-logo').addEventListener('input', function(){
+    S.logoScale = parseFloat(this.value);
+    document.getElementById('sv-logo').textContent = S.logoScale.toFixed(2);
+    renderLogo();
+  });
+
+  // Mono slider
+  document.getElementById('sl-mono').addEventListener('input', function(){
+    S.monoScale = parseFloat(this.value);
+    document.getElementById('sv-mono').textContent = S.monoScale.toFixed(2);
+    renderMono();
+  });
+
+  // Logo error handling
+  document.getElementById('esq-logo').addEventListener('error', function(){
+    this.style.display = 'none';
+  });
+  document.getElementById('esq-logo').addEventListener('load', function(){
+    if (this.naturalWidth > 0) this.style.display = 'block';
+  });
+
+  updateMassVisibility();
+
+  // Apply initial palette colors to document bg
+  var palette = getPaletteById(S.paletteId);
+  applyPalette(palette);
+}
+
+// Wait for DOM + config.js
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
