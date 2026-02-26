@@ -213,7 +213,19 @@ input[type="file"] {
 .btn-grand:hover { background: #2e2e36; }
 .btn-row { display: flex; gap: 6px; margin-bottom: 5px; }
 .btn-row .btn { flex: 1; }
-.btn-download {
+.btn-secondary {
+  background: #f0f0ec;
+  border: 1px solid #d0d0ca;
+  color: #3a3a38;
+  padding: 6px 12px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-secondary:hover {
+  background: #e4e4e0; border-color: #b0b0aa; 
   margin: 14px 18px;
   width: calc(100% - 36px);
   padding: 12px;
@@ -307,6 +319,20 @@ input[type="range"]::-moz-range-thumb {
   --bs4: 1;
   --bs5: 1;
 
+  /* Individual text element scales */
+  --ts-name:  1;
+  --ts-extra: 1;
+  --ts-dates: 1;
+
+  /* Photo saturation */
+  --photo-saturate: 1;
+
+  /* Compresión de contenido (0=normal, 1=máxima compresión) */
+  --compress: 0;
+
+  /* Margen superior del contenido */
+  --top-margin: 0px;
+
   /* Font family/weight/style custom properties (set by JS) */
   --fn-family: serif;
   --fn-weight: 700; --fn-style: normal; --fn-ls: 0.05em; --fn-tt: none;
@@ -376,7 +402,7 @@ input[type="range"]::-moz-range-thumb {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  padding: 16px 16px 70px; /* bottom pad leaves room for block 5 */
+  padding: calc(16px + var(--top-margin)) 16px 70px;
   gap: 0;
   min-height: 100%;
 }
@@ -393,41 +419,50 @@ input[type="range"]::-moz-range-thumb {
 
 /* Block 1 — Photo */
 .esq-block-photo {
-  padding: 10px 0 8px;
+  padding: calc((1 - var(--compress)) * 10px) 0 calc((1 - var(--compress)) * 8px);
 }
 .photo-wrapper {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  /* overflow hidden para que border-radius corte la imagen */
+  overflow: hidden;
+  flex-shrink: 0;
 }
 .photo-wrapper img {
   display: block;
   object-fit: cover;
   transition: width 0.1s, height 0.1s;
+  width: 100%;
+  height: 100%;
 }
-/* Photo shapes */
-.photo-shape-circle img { border-radius: 50%; }
-.photo-shape-oval img { border-radius: 50% / 40%; }
-.photo-shape-rounded img { border-radius: 12%; }
-.photo-shape-square img { border-radius: 0; }
-/* Photo borders */
-.photo-border-thin img { border: 1px solid var(--c-border); }
-.photo-border-medium img { border: 2.5px solid var(--c-border); }
-.photo-border-none img { border: none; }
-.photo-border-blur img {
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 55%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 55%, transparent 100%);
+/* Photo shapes — border-radius aplicado al WRAPPER para que box-shadow lo respete */
+.photo-shape-circle  { border-radius: 50%; }
+.photo-shape-oval    { border-radius: 50% / 40%; }
+.photo-shape-rounded { border-radius: 12%; }
+.photo-shape-square  { border-radius: 0; }
+/* Photo borders — borde aplicado al WRAPPER */
+.photo-border-thin   { border: 1.5px solid var(--c-border); }
+.photo-border-medium { border: 3px   solid var(--c-border); }
+.photo-border-none   { border: none; }
+.photo-border-blur   {
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 50%, transparent 100%);
+  mask-image:         radial-gradient(ellipse 80% 80% at 50% 50%, black 50%, transparent 100%);
   border: none;
 }
-/* Photo shadow */
-.photo-shadow img {
-  filter: drop-shadow(0 3px 10px var(--c-shadow));
+/* Photo shadow — box-shadow en el WRAPPER (compatible con html2canvas) */
+.photo-shadow {
+  box-shadow: 0 4px 18px 2px var(--c-shadow);
+}
+/* Saturación de la foto */
+.photo-wrapper img {
+  filter: saturate(var(--photo-saturate, 1));
 }
 
 /* Block 2 — Name + Dates */
 .esq-block-name {
-  padding: 8px 0;
+  padding: calc((1 - var(--compress)) * 8px) 0;
 }
 .esq-name {
   font-family: var(--fn-family);
@@ -436,9 +471,9 @@ input[type="range"]::-moz-range-thumb {
   letter-spacing: var(--fn-ls);
   text-transform: var(--fn-tt);
   color: var(--c-name);
-  font-size: calc(var(--base) * 2.1 * var(--bs2));
-  line-height: 1.2;
-  margin-bottom: 4px;
+  font-size: calc(var(--base) * 2.1 * var(--bs2) * var(--ts-name));
+  line-height: calc(1.2 - var(--compress) * 0.25);
+  margin-bottom: calc((1 - var(--compress)) * 4px);
 }
 .esq-name-extra {
   font-family: var(--fd-family);
@@ -447,8 +482,8 @@ input[type="range"]::-moz-range-thumb {
   letter-spacing: calc(var(--fd-ls) * 1.5);
   text-transform: uppercase;
   color: var(--c-muted);
-  font-size: calc(var(--base) * 0.72 * var(--bs2));
-  margin-bottom: 6px;
+  font-size: calc(var(--base) * 0.72 * var(--bs2) * var(--ts-extra));
+  margin-bottom: calc((1 - var(--compress)) * 6px);
 }
 .esq-dates {
   font-family: var(--fd-family);
@@ -457,13 +492,13 @@ input[type="range"]::-moz-range-thumb {
   letter-spacing: var(--fd-ls);
   text-transform: var(--fd-tt);
   color: var(--c-muted);
-  font-size: calc(var(--base) * 0.82 * var(--bs2));
-  line-height: 1.6;
+  font-size: calc(var(--base) * 0.82 * var(--bs2) * var(--ts-dates));
+  line-height: calc(1.6 - var(--compress) * 0.5);
 }
 
 /* Block 3 — Phrase */
 .esq-block-phrase {
-  padding: 10px 14px;
+  padding: calc((1 - var(--compress)) * 10px) 14px;
 }
 .esq-phrase {
   font-family: var(--fp-family);
@@ -473,15 +508,15 @@ input[type="range"]::-moz-range-thumb {
   text-transform: var(--fp-tt);
   color: var(--c-text);
   font-size: calc(var(--base) * 1.55 * var(--bs3));
-  line-height: 1.4;
+  line-height: calc(1.4 - var(--compress) * 0.4);
 }
 
 /* Block 4 — Subtitles */
 .esq-block-subtitles {
-  padding: 8px 10px;
+  padding: calc((1 - var(--compress)) * 8px) 10px;
   width: 100%;
 }
-.esq-subtitle-section { margin-bottom: 8px; }
+.esq-subtitle-section { margin-bottom: calc((1 - var(--compress)) * 8px); }
 .esq-subtitle-head {
   font-family: var(--fs-family);
   font-weight: var(--fs-weight);
@@ -490,7 +525,7 @@ input[type="range"]::-moz-range-thumb {
   text-transform: var(--fs-tt);
   color: var(--c-subtitle);
   font-size: calc(var(--base) * 0.95 * var(--bs4));
-  margin-bottom: 3px;
+  margin-bottom: calc((1 - var(--compress)) * 3px + 1px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -504,13 +539,13 @@ input[type="range"]::-moz-range-thumb {
   text-transform: var(--fsb-tt);
   color: var(--c-text);
   font-size: calc(var(--base) * 0.78 * var(--bs4));
-  line-height: 1.55;
+  line-height: calc(1.55 - var(--compress) * 0.45);
 }
 .esq-misas-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-top: 3px;
+  margin-top: calc((1 - var(--compress)) * 3px);
 }
 
 /* Block dividers */
@@ -518,7 +553,7 @@ input[type="range"]::-moz-range-thumb {
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 4px 0;
+  padding: calc((1 - var(--compress)) * 4px) 0;
 }
 
 /* Block 5 — Company Phrase (ABSOLUTE at bottom) */
@@ -731,10 +766,18 @@ Jardines del Recuerdo, Av. Principal s/n</textarea>
       </div>
 
       <button class="btn btn-rand" id="btn-rand-bg">Randomizar Fondo</button>
+      <div class="ctrl-row" style="margin-bottom:5px">
+        <label class="ctrl-label">Subir imagen de fondo personalizada</label>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:3px;">
+          <input type="file" id="input-bg-image" accept="image/*" style="flex:1;margin-bottom:0;">
+          <button class="btn btn-secondary" id="btn-rand-bg-overlay" style="white-space:nowrap;flex-shrink:0;font-size:10px;padding:5px 9px;">Gradiente aleatorio</button>
+        </div>
+      </div>
       <button class="btn btn-rand" id="btn-rand-photo-style">Randomizar Foto</button>
       <button class="btn btn-rand" id="btn-rand-decos">Randomizar Decoraciones</button>
       <button class="btn btn-danger btn-rand" id="btn-no-decos" style="background:#fff8f8">Quitar Decoraciones</button>
       <button class="btn btn-rand" id="btn-rand-mono">Randomizar Moño</button>
+      <button class="btn btn-rand" id="btn-logo-corner">Cambiar Esquina del Logo</button>
     </div>
 
     <!-- SECCION: Tamaños -->
@@ -792,6 +835,93 @@ Jardines del Recuerdo, Av. Principal s/n</textarea>
           <span class="slider-value" id="sv-mono">1.00</span>
         </div>
         <input type="range" id="sl-mono" min="0.3" max="2.5" step="0.05" value="1">
+      </div>
+
+      <div class="ctrl-section-title" style="margin-top:10px">Tamaño de Textos Individuales</div>
+
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Nombre del Fallecido</span>
+          <span class="slider-value" id="sv-ts-name">1.00</span>
+        </div>
+        <input type="range" id="sl-ts-name" min="0.3" max="2.8" step="0.05" value="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Texto adicional (Q.E.P.D.)</span>
+          <span class="slider-value" id="sv-ts-extra">1.00</span>
+        </div>
+        <input type="range" id="sl-ts-extra" min="0.3" max="2.8" step="0.05" value="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Fechas de nacimiento y defunción</span>
+          <span class="slider-value" id="sv-ts-dates">1.00</span>
+        </div>
+        <input type="range" id="sl-ts-dates" min="0.3" max="2.8" step="0.05" value="1">
+      </div>
+
+      <div class="ctrl-section-title" style="margin-top:10px">Ajuste de Fotografía</div>
+
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Saturación de la foto</span>
+          <span class="slider-value" id="sv-sat">1.00</span>
+        </div>
+        <input type="range" id="sl-sat" min="0" max="2" step="0.05" value="1">
+      </div>
+
+      <div class="ctrl-row" style="margin-bottom:6px;">
+        <label class="ctrl-label">Gradiente sobre la foto</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select id="sel-photo-grad" style="flex:1;margin-bottom:0;"></select>
+          <button class="btn btn-secondary" id="btn-rand-photo-grad" style="flex-shrink:0;font-size:10px;padding:5px 9px;">Aleatorio</button>
+        </div>
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Opacidad del gradiente de foto</span>
+          <span class="slider-value" id="sv-pg-opacity">0.28</span>
+        </div>
+        <input type="range" id="sl-pg-opacity" min="0" max="0.85" step="0.01" value="0.28">
+      </div>
+
+      <div class="ctrl-section-title" style="margin-top:10px">Compresión de Contenido</div>
+
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Comprimir contenido</span>
+          <span class="slider-value" id="sv-compress">0</span>
+        </div>
+        <input type="range" id="sl-compress" min="0" max="1" step="0.01" value="0">
+      </div>
+
+      <div class="ctrl-section-title" style="margin-top:10px">Posición y Margen</div>
+
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Margen superior del contenido</span>
+          <span class="slider-value" id="sv-top-margin">0</span>
+        </div>
+        <input type="range" id="sl-top-margin" min="0" max="200" step="1" value="0">
+      </div>
+
+      <div class="ctrl-section-title" style="margin-top:10px">Imagen de Fondo</div>
+      <span style="font-size:10px;color:#9a9a90;display:block;margin-bottom:6px;">Solo aplica cuando el fondo es una imagen</span>
+
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Opacidad del filtro gradiente</span>
+          <span class="slider-value" id="sv-overlay-opacity">0.55</span>
+        </div>
+        <input type="range" id="sl-overlay-opacity" min="0" max="1" step="0.01" value="0.55">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-label">Desenfoque de la imagen (blur)</span>
+          <span class="slider-value" id="sv-bg-blur">0</span>
+        </div>
+        <input type="range" id="sl-bg-blur" min="0" max="20" step="0.5" value="0">
       </div>
     </div>
 
@@ -879,6 +1009,32 @@ var S = {
 
   // Block scales
   bs: [1, 1, 1, 1, 1], // index 0..4 = blocks 1..5
+
+  // Individual text scales
+  tsName:  1,
+  tsExtra: 1,
+  tsDates: 1,
+
+  // Photo saturation (0=gris, 1=normal, 2=saturado)
+  photoSaturate: 1,
+
+  // Gradiente sobre la foto
+  photoGradientIndex:   1,    // índice en PHOTO_GRADIENTS (1 = bottom-fade por defecto)
+  photoGradientOpacity: 0.28, // 0=invisible, 1=totalmente opaco; por defecto moderado
+
+  // Compresión de contenido (0=normal, 1=máxima)
+  compress: 0,
+
+  // Margen superior del contenido (px, 0–120)
+  topMargin: 0,
+
+  // Fondo personalizado subido por el usuario
+  bgCustomDataURL: null,
+
+  // Overlay de gradiente sobre imágenes de fondo
+  bgOverlayIndex: 0,   // índice en BG_OVERLAYS (se elige random)
+  bgOverlayOpacity: 0.55,  // 0=invisible, 1=totalmente opaco
+  bgBlur: 0,           // px de blur para imagen de fondo
 
   // Background image cache (base64 for export)
   bgImageB64: null,
@@ -974,6 +1130,32 @@ function applyPalette(palette) {
   e.style.setProperty('--c-shadow', palette.photoShadowColor);
 }
 
+// BG_OVERLAYS y PHOTO_GRADIENTS se cargan desde config.js
+
+// Devuelve [c1, c2, c3] con alpha ajustado para overlays
+function getOverlayColors(palette, opacity) {
+  function hexToRgba(hex, a) {
+    hex = hex.replace('#','');
+    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+    var r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+    return 'rgba('+r+','+g+','+b+','+a.toFixed(3)+')';
+  }
+  // Convierte también valores que ya son rgba/rgb
+  function toRgba(color, a) {
+    if (color.startsWith('#')) return hexToRgba(color, a);
+    // Si ya es rgba, reemplazar la alpha
+    var m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (m) return 'rgba('+m[1]+','+m[2]+','+m[3]+','+a.toFixed(3)+')';
+    return color;
+  }
+  var op = opacity !== undefined ? opacity : 0.55;
+  return [
+    toRgba(palette.bg,        op),
+    toRgba(palette.gradientEnd, op * 0.85),
+    toRgba(palette.accentColor, op * 0.6),
+  ];
+}
+
 // ============================================================
 // BACKGROUND RENDERING
 // ============================================================
@@ -982,81 +1164,98 @@ function renderBackground() {
   var palette = getPaletteById(S.paletteId);
   var b = S.background;
 
-  bg.style.cssText = '';
+  bg.style.cssText = 'position:absolute;inset:0;z-index:0;';
   bg.innerHTML = '';
 
-  switch(b.type) {
-    case 'solid':
-      bg.style.background = palette.bg;
-      break;
+  // ── Determinar si hay imagen (picsum o personalizada) ────────
+  var hasImage = false;
+  var imageUrl = null;
 
-    case 'gradient-linear':
-      bg.style.background = 'linear-gradient(160deg, ' + palette.gradientStart + ' 0%, ' + palette.gradientEnd + ' 100%)';
-      break;
+  if (b.type === 'image-full' || b.type === 'image-vignette' || b.type === 'image-custom') {
+    if (b.type === 'image-custom' && S.bgCustomDataURL) {
+      imageUrl = S.bgCustomDataURL;
+      hasImage = true;
+    } else if (b.imageUrl) {
+      imageUrl = b.imageUrl;
+      hasImage = true;
+    }
+  }
 
-    case 'gradient-radial':
-      bg.style.background = 'radial-gradient(ellipse at 50% 30%, ' + palette.bg + ' 0%, ' + palette.gradientEnd + ' 100%)';
-      break;
+  if (hasImage) {
+    // ── Capa 1: Base del color de paleta ─────────────────────
+    var base = document.createElement('div');
+    base.style.cssText = 'position:absolute;inset:0;background:' + palette.bg + ';';
+    bg.appendChild(base);
 
-    case 'gradient-top':
-      bg.style.background = 'linear-gradient(to bottom, ' + palette.gradientEnd + ' 0%, ' + palette.bg + ' 40%, ' + palette.bg + ' 100%)';
-      break;
+    // ── Capa 2: Imagen con blur ───────────────────────────────
+    var imgLayer = document.createElement('div');
+    var blurVal = (S.bgBlur || 0);
+    // Expandir para que el blur no deje bordes blancos
+    var expand = blurVal > 0 ? Math.ceil(blurVal * 1.5) + 'px' : '0px';
+    imgLayer.style.cssText = [
+      'position:absolute',
+      'top:-' + expand,
+      'left:-' + expand,
+      'right:-' + expand,
+      'bottom:-' + expand,
+      'background-image:url(' + imageUrl + ')',
+      'background-size:cover',
+      'background-position:center',
+      blurVal > 0 ? 'filter:blur(' + blurVal + 'px)' : '',
+    ].filter(Boolean).join(';') + ';';
+    bg.appendChild(imgLayer);
 
-    case 'pattern-dots':
-      bg.style.background = palette.bg;
-      bg.style.backgroundImage = 'radial-gradient(circle, ' + palette.decorationColor + '30 1px, transparent 1px)';
-      bg.style.backgroundSize = '14px 14px';
-      break;
+    // ── Capa 3: Overlay gradiente ─────────────────────────────
+    var overlayIdx = S.bgOverlayIndex !== undefined ? S.bgOverlayIndex : 0;
+    overlayIdx = Math.min(overlayIdx, BG_OVERLAYS.length - 1);
+    var opacity = S.bgOverlayOpacity !== undefined ? S.bgOverlayOpacity : 0.55;
+    var colors = getOverlayColors(palette, opacity);
+    var gradientCSS = BG_OVERLAYS[overlayIdx](colors[0], colors[1], colors[2]);
 
-    case 'pattern-lines':
-      bg.style.background = palette.bg;
-      bg.style.backgroundImage = 'repeating-linear-gradient(0deg, ' + palette.decorationColor + '18 0px, ' + palette.decorationColor + '18 1px, transparent 1px, transparent 16px)';
-      break;
+    var overlayLayer = document.createElement('div');
+    overlayLayer.style.cssText = 'position:absolute;inset:0;background:' + gradientCSS + ';';
+    bg.appendChild(overlayLayer);
 
-    case 'pattern-crosshatch':
-      bg.style.background = palette.bg;
-      bg.style.backgroundImage =
-        'repeating-linear-gradient(45deg, ' + palette.decorationColor + '14 0px, ' + palette.decorationColor + '14 1px, transparent 1px, transparent 10px),' +
-        'repeating-linear-gradient(-45deg, ' + palette.decorationColor + '14 0px, ' + palette.decorationColor + '14 1px, transparent 1px, transparent 10px)';
-      break;
-
-    case 'pattern-grid':
-      bg.style.background = palette.bg;
-      bg.style.backgroundImage =
-        'linear-gradient(' + palette.decorationColor + '20 1px, transparent 1px),' +
-        'linear-gradient(90deg, ' + palette.decorationColor + '20 1px, transparent 1px)';
-      bg.style.backgroundSize = '20px 20px';
-      break;
-
-    case 'image-full':
-      if (b.imageUrl) {
-        bg.style.backgroundImage = 'url(' + b.imageUrl + ')';
-        bg.style.backgroundSize = 'cover';
-        bg.style.backgroundPosition = 'center';
-        bg.style.opacity = '0.25';
-      } else {
+  } else {
+    // ── Sin imagen: fondos sólidos, gradientes CSS, patrones ─
+    switch(b.type) {
+      case 'solid':
         bg.style.background = palette.bg;
-      }
-      break;
-
-    case 'image-vignette':
-      if (b.imageUrl) {
-        var overlay = document.createElement('div');
-        overlay.style.cssText = 'position:absolute;inset:0;background-image:url(' + b.imageUrl + ');background-size:cover;background-position:center;opacity:0.18;';
-        bg.appendChild(overlay);
-        var vignette = document.createElement('div');
-        vignette.style.cssText = 'position:absolute;inset:0;background:radial-gradient(ellipse at center, ' + palette.bg + '00 0%, ' + palette.bg + ' 65%);';
-        bg.appendChild(vignette);
-        var fill = document.createElement('div');
-        fill.style.cssText = 'position:absolute;inset:0;background:' + palette.bg + ';opacity:0.45;';
-        bg.appendChild(fill);
-      } else {
+        break;
+      case 'gradient-linear':
+        bg.style.background = 'linear-gradient(160deg, ' + palette.gradientStart + ' 0%, ' + palette.gradientEnd + ' 100%)';
+        break;
+      case 'gradient-radial':
+        bg.style.background = 'radial-gradient(ellipse at 50% 30%, ' + palette.bg + ' 0%, ' + palette.gradientEnd + ' 100%)';
+        break;
+      case 'gradient-top':
+        bg.style.background = 'linear-gradient(to bottom, ' + palette.gradientEnd + ' 0%, ' + palette.bg + ' 40%, ' + palette.bg + ' 100%)';
+        break;
+      case 'pattern-dots':
         bg.style.background = palette.bg;
-      }
-      break;
-
-    default:
-      bg.style.background = palette.bg;
+        bg.style.backgroundImage = 'radial-gradient(circle, ' + palette.decorationColor + '30 1px, transparent 1px)';
+        bg.style.backgroundSize = '14px 14px';
+        break;
+      case 'pattern-lines':
+        bg.style.background = palette.bg;
+        bg.style.backgroundImage = 'repeating-linear-gradient(0deg, ' + palette.decorationColor + '18 0px, ' + palette.decorationColor + '18 1px, transparent 1px, transparent 16px)';
+        break;
+      case 'pattern-crosshatch':
+        bg.style.background = palette.bg;
+        bg.style.backgroundImage =
+          'repeating-linear-gradient(45deg, ' + palette.decorationColor + '14 0px, ' + palette.decorationColor + '14 1px, transparent 1px, transparent 10px),' +
+          'repeating-linear-gradient(-45deg, ' + palette.decorationColor + '14 0px, ' + palette.decorationColor + '14 1px, transparent 1px, transparent 10px)';
+        break;
+      case 'pattern-grid':
+        bg.style.background = palette.bg;
+        bg.style.backgroundImage =
+          'linear-gradient(' + palette.decorationColor + '20 1px, transparent 1px),' +
+          'linear-gradient(90deg, ' + palette.decorationColor + '20 1px, transparent 1px)';
+        bg.style.backgroundSize = '20px 20px';
+        break;
+      default:
+        bg.style.background = palette.bg;
+    }
   }
 }
 
@@ -1104,33 +1303,243 @@ function getDividerHTML() {
 }
 
 // ============================================================
+// PHOTO IMAGE CACHE
+// ============================================================
+var photoImgCache = null; // HTMLImageElement pre-cargado
+
+function loadPhotoIntoCache(dataURL, callback) {
+  var img = new Image();
+  img.onload = function() {
+    photoImgCache = img;
+    if (callback) callback();
+  };
+  img.onerror = function() {
+    photoImgCache = null;
+    if (callback) callback();
+  };
+  img.src = dataURL;
+}
+
+// ============================================================
+// CANVAS PHOTO HELPERS
+// ============================================================
+
+/**
+ * Dibuja el path de la forma de la foto en el contexto canvas.
+ * Coordenadas en pixeles de canvas (ya multiplicadas por dpr externamente).
+ */
+function buildShapePath(ctx, x, y, w, h) {
+  ctx.beginPath();
+  var shape = S.photoShape || 'circle';
+  switch (shape) {
+    case 'circle':
+      ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+      break;
+    case 'oval':
+      ctx.ellipse(x + w / 2, y + h / 2, w / 2, h * 0.42, 0, 0, Math.PI * 2);
+      break;
+    case 'rounded':
+      var r = Math.min(w, h) * 0.12;
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      break;
+    case 'square':
+    default:
+      ctx.rect(x, y, w, h);
+      break;
+  }
+}
+
+/**
+ * Dibuja la foto (con forma, sombra, saturación y borde) sobre un canvas.
+ * photoW/photoH: dimensiones LÓGICAS (CSS px) de la foto.
+ * pad: relleno adicional alrededor para que la sombra no se corte.
+ * dpr: device pixel ratio usado para el canvas.
+ */
+function drawPhotoOnCanvas(canvas, photoW, photoH, pad, dpr) {
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Coordenadas en pixeles de canvas (dpr-adjusted)
+  var pW = photoW * dpr;
+  var pH = photoH * dpr;
+  var ox = pad * dpr;
+  var oy = pad * dpr;
+
+  var palette = getPaletteById(S.paletteId);
+  var sat = (S.photoSaturate !== undefined) ? S.photoSaturate : 1;
+  var isBorderBlur = (S.photoBorder === 'blur');
+
+  // ── PASO 1: Sombra ───────────────────────────────────────────
+  if (S.photoShadow) {
+    ctx.save();
+    ctx.shadowColor   = palette.photoShadowColor || 'rgba(0,0,0,0.3)';
+    ctx.shadowBlur    = 18 * dpr;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 5 * dpr;
+    buildShapePath(ctx, ox, oy, pW, pH);
+    ctx.fillStyle = '#555555';
+    ctx.fill();
+    ctx.restore();
+
+    // Borrar el relleno que sirvió para generar la sombra,
+    // dejando solo la sombra exterior visible.
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    buildShapePath(ctx, ox, oy, pW, pH);
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // ── PASO 2: Foto con saturación (clipeada a la forma) ────────
+  ctx.save();
+  if (!isBorderBlur) {
+    buildShapePath(ctx, ox, oy, pW, pH);
+    ctx.clip();
+  }
+
+  if (photoImgCache && photoImgCache.complete && photoImgCache.naturalWidth > 0) {
+    // Aplicar saturación (Canvas 2D filter — baked en pixels, funciona en export)
+    ctx.filter = 'saturate(' + sat + ')';
+
+    // Cover fit (mismo comportamiento que object-fit:cover)
+    var img    = photoImgCache;
+    var iA     = img.naturalWidth / img.naturalHeight;
+    var bA     = photoW / photoH;
+    var dW, dH, dX, dY;
+    if (iA > bA) {
+      dH = pH; dW = pH * iA;
+      dX = ox + (pW - dW) / 2; dY = oy;
+    } else {
+      dW = pW; dH = pW / iA;
+      dX = ox; dY = oy + (pH - dH) / 2;
+    }
+    ctx.drawImage(img, dX, dY, dW, dH);
+  } else {
+    // Placeholder
+    ctx.filter = 'none';
+    ctx.fillStyle = '#e0e0da';
+    ctx.fillRect(ox, oy, pW, pH);
+    ctx.fillStyle = '#a0a098';
+    var fsize = Math.round(Math.min(pW, pH) * 0.12);
+    ctx.font = 'bold ' + fsize + 'px sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '0.1em';
+    ctx.fillText('FOTO', ox + pW / 2, oy + pH / 2);
+  }
+  ctx.restore();
+
+  // ── PASO 2b: Gradiente sobre la foto ─────────────────────────
+  var pgIdx = S.photoGradientIndex !== undefined ? S.photoGradientIndex : 0;
+  var pgOpacity = S.photoGradientOpacity !== undefined ? S.photoGradientOpacity : 0.28;
+  var pgArr = (typeof PHOTO_GRADIENTS !== 'undefined') ? PHOTO_GRADIENTS : [];
+  pgIdx = Math.min(pgIdx, pgArr.length - 1);
+  if (pgArr.length > 0 && pgIdx > 0 && pgOpacity > 0) {
+    var pgFn = pgArr[pgIdx];
+    // Generar colores con la opacidad del gradiente de foto
+    var pgPalette = getPaletteById(S.paletteId);
+    function pgHexToRgba(hex, a) {
+      hex = (hex || '#888888').replace('#','');
+      if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+      var rr=parseInt(hex.slice(0,2),16), gg=parseInt(hex.slice(2,4),16), bb=parseInt(hex.slice(4,6),16);
+      return 'rgba('+rr+','+gg+','+bb+','+a.toFixed(3)+')';
+    }
+    function pgColor(hex, a) {
+      if (!hex) return 'rgba(0,0,0,'+a+')';
+      if (hex.startsWith('#')) return pgHexToRgba(hex, a);
+      var m = hex.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (m) return 'rgba('+m[1]+','+m[2]+','+m[3]+','+a.toFixed(3)+')';
+      return hex;
+    }
+    var pc1 = pgColor(pgPalette.bg,            pgOpacity);
+    var pc2 = pgColor(pgPalette.gradientEnd,   pgOpacity * 0.85);
+    var pc3 = pgColor(pgPalette.accentColor,   pgOpacity * 0.55);
+    ctx.save();
+    // Clipear al shape para que el gradiente no desborde
+    buildShapePath(ctx, ox, oy, pW, pH);
+    ctx.clip();
+    pgFn.draw(ctx, ox, oy, pW, pH, pc1, pc2, pc3);
+    ctx.restore();
+  }
+
+  // ── PASO 3: Borde difuminado (para la opción "blur") ─────────
+  if (isBorderBlur) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-in';
+    var cx = ox + pW / 2, cy = oy + pH / 2;
+    var innerR = Math.min(pW, pH) * 0.30;
+    var outerR = Math.min(pW, pH) * 0.52;
+    var grad = ctx.createRadialGradient(cx, cy, innerR, cx, cy, outerR);
+    grad.addColorStop(0,   'rgba(0,0,0,1)');
+    grad.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
+  // ── PASO 4: Borde con línea ───────────────────────────────────
+  if (S.photoBorder === 'thin' || S.photoBorder === 'medium') {
+    var bw = (S.photoBorder === 'thin' ? 1.5 : 3) * dpr;
+    ctx.save();
+    buildShapePath(ctx, ox, oy, pW, pH);
+    ctx.clip(); // que el borde no sangre afuera de la forma
+    ctx.strokeStyle = palette.borderColor || '#333';
+    ctx.lineWidth   = bw * 2; // la mitad queda fuera del clip
+    buildShapePath(ctx, ox, oy, pW, pH);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// ============================================================
 // BLOCK RENDERING FUNCTIONS
 // ============================================================
 function buildBlock1() {
   var div = document.createElement('div');
   div.className = 'esq-block esq-block-photo';
   div.dataset.block = '1';
-  div.dataset.blockId = 'b1';
 
-  var ratio = S.photoAspectRatio.split(':').map(Number);
-  var baseW = 160;
-  var baseH = ratio[1] / ratio[0] * baseW;
+  // Leer CSS vars reales del elemento en el DOM para calcular pixeles exactos
+  var esq  = document.getElementById('esquela');
+  var cs   = getComputedStyle(esq);
+  var base = parseFloat(cs.getPropertyValue('--base')) || 13.7;
+  var bs1  = parseFloat(cs.getPropertyValue('--bs1'))  || 1;
 
-  var wrapClass = 'photo-wrapper';
-  wrapClass += ' photo-shape-' + S.photoShape;
-  wrapClass += ' photo-border-' + S.photoBorder;
-  if (S.photoShadow) wrapClass += ' photo-shadow';
+  var ratio  = S.photoAspectRatio.split(':').map(Number);
+  var photoW = Math.round(base * (160 / 13.7) * bs1);
+  var photoH = Math.round(photoW * ratio[1] / ratio[0]);
 
-  var imgStyle = 'width:calc(var(--base)*' + (baseW/13.7).toFixed(2) + '*var(--bs1));height:calc(var(--base)*' + (baseH/13.7).toFixed(2) + '*var(--bs1));';
+  // Padding extra para que la sombra no se corte
+  var pad   = S.photoShadow ? 26 : 0;
+  var canvW = photoW + pad * 2;
+  var canvH = photoH + pad * 2;
+  var dpr   = 2; // 2× para nitidez en pantallas HiDPI y en el export
 
-  var imgContent = '';
-  if (S.photoDataURL) {
-    imgContent = '<img src="' + S.photoDataURL + '" style="' + imgStyle + '" alt="Foto">';
-  } else {
-    imgContent = '<div class="photo-placeholder" style="' + imgStyle + '">Foto</div>';
-  }
+  var canvas = document.createElement('canvas');
+  canvas.width  = canvW * dpr;
+  canvas.height = canvH * dpr;
+  // Margen negativo para compensar el padding de sombra visualmente
+  canvas.style.cssText = [
+    'display:block',
+    'width:'   + canvW + 'px',
+    'height:'  + canvH + 'px',
+    'flex-shrink:0',
+    'margin:'  + (-pad) + 'px auto',
+  ].join(';');
 
-  div.innerHTML = '<div class="' + wrapClass + '">' + imgContent + '</div>';
+  drawPhotoOnCanvas(canvas, photoW, photoH, pad, dpr);
+
+  div.appendChild(canvas);
   return div;
 }
 
@@ -1250,18 +1659,35 @@ function renderBlocks() {
   for (var i = 0; i < 5; i++) {
     document.getElementById('esquela').style.setProperty('--bs' + (i+1), S.bs[i]);
   }
+  // Individual text scales
+  var esq = document.getElementById('esquela');
+  esq.style.setProperty('--ts-name',  S.tsName  || 1);
+  esq.style.setProperty('--ts-extra', S.tsExtra || 1);
+  esq.style.setProperty('--ts-dates', S.tsDates || 1);
+  esq.style.setProperty('--photo-saturate', S.photoSaturate !== undefined ? S.photoSaturate : 1);
+  esq.style.setProperty('--compress', S.compress !== undefined ? S.compress : 0);
+  esq.style.setProperty('--top-margin', (S.topMargin || 0) + 'px');
 }
 
 // ============================================================
 // LOGO RENDER
 // ============================================================
+var LOGO_CORNERS = ['top-right', 'bottom-right', 'bottom-left', 'top-left'];
+var CORNER_CLASS  = { 'top-left':'corner-tl', 'top-right':'corner-tr', 'bottom-left':'corner-bl', 'bottom-right':'corner-br' };
+
 function renderLogo() {
   var logo = document.getElementById('esq-logo');
   var baseSize = 60 * S.logoScale;
-  logo.style.width = baseSize + 'px';
+  logo.style.width  = baseSize + 'px';
   logo.style.height = 'auto';
-  logo.className = 'corner-' + S.logoCorner;
-  logo.style.display = 'block';
+  logo.classList.remove('corner-tl','corner-tr','corner-bl','corner-br');
+  logo.classList.add(CORNER_CLASS[S.logoCorner] || 'corner-tr');
+}
+
+function cycleLogoCorner() {
+  var idx = LOGO_CORNERS.indexOf(S.logoCorner);
+  S.logoCorner = LOGO_CORNERS[(idx + 1) % LOGO_CORNERS.length];
+  renderLogo();
 }
 
 // ============================================================
@@ -1403,12 +1829,15 @@ function randomizeColors() {
 function randomizeBackground() {
   var types = ['solid','gradient-linear','gradient-radial','gradient-top',
                'pattern-dots','pattern-lines','pattern-crosshatch','pattern-grid',
-               'image-full','image-vignette'];
+               'image-full','image-full','image-full']; // más peso a imágenes
+  // Si hay imagen personalizada, incluirla con peso
+  if (S.bgCustomDataURL) types.push('image-custom','image-custom');
   var type = rand(types);
   var seed = randInt(1, 999);
-  var w = 700; var h = 990;
-  var url = 'https://picsum.photos/seed/' + seed + '/' + w + '/' + h;
+  var url = 'https://picsum.photos/seed/' + seed + '/700/990';
   S.background = { type: type, imageUrl: url, seed: seed };
+  // Nuevo overlay random
+  S.bgOverlayIndex = randInt(0, BG_OVERLAYS.length - 1);
 }
 
 function randomizeMono() {
@@ -1464,10 +1893,9 @@ function downloadPNG() {
 // CONFIG EXPORT / IMPORT
 // ============================================================
 function getExportState() {
-  var state = JSON.parse(JSON.stringify(S)); // deep clone
-  // Photo is already dataURL (base64) in S.photoDataURL
-  // Background image: if it's a URL, store the seed; on import re-fetch
-  // If user uploaded a bg image, store as b64 (not implemented for bg images from URL)
+  var state = JSON.parse(JSON.stringify(S));
+  // photoDataURL ya es base64 — se incluye automáticamente
+  // bgCustomDataURL también se clona — ya contiene base64
   return state;
 }
 
@@ -1489,13 +1917,22 @@ function importConfig(file) {
       var state = JSON.parse(e.target.result);
       Object.assign(S, state);
       applyStateToInputs(S);
-      // Load fonts then update
-      var pairing = getFontPairingById(S.fontPairingId);
-      loadFontPairing(pairing, function(){
-        updatePreview();
-        hideLoading();
-      });
-    } catch(err) {
+      // Si hay foto, pre-cargarla en cache
+      if (S.photoDataURL) {
+        loadPhotoIntoCache(S.photoDataURL, function(){
+          var pairing = getFontPairingById(S.fontPairingId);
+          loadFontPairing(pairing, function(){
+            updatePreview();
+            hideLoading();
+          });
+        });
+      } else {
+        var pairing = getFontPairingById(S.fontPairingId);
+        loadFontPairing(pairing, function(){
+          updatePreview();
+          hideLoading();
+        });
+      }    } catch(err) {
       hideLoading();
       alert('Error al importar: ' + err.message);
     }
@@ -1530,6 +1967,40 @@ function applyStateToInputs(s) {
   var slMono = document.getElementById('sl-mono');
   if (slMono) { slMono.value = s.monoScale || 1; updateSliderDisplay('sl-mono','sv-mono'); }
 
+  // Individual text scale sliders
+  var slTsName = document.getElementById('sl-ts-name');
+  if (slTsName) { slTsName.value = s.tsName || 1; updateSliderDisplay('sl-ts-name','sv-ts-name'); }
+  var slTsExtra = document.getElementById('sl-ts-extra');
+  if (slTsExtra) { slTsExtra.value = s.tsExtra || 1; updateSliderDisplay('sl-ts-extra','sv-ts-extra'); }
+  var slTsDates = document.getElementById('sl-ts-dates');
+  if (slTsDates) { slTsDates.value = s.tsDates || 1; updateSliderDisplay('sl-ts-dates','sv-ts-dates'); }
+
+  // Saturation slider
+  var slSat = document.getElementById('sl-sat');
+  if (slSat) { slSat.value = s.photoSaturate !== undefined ? s.photoSaturate : 1; updateSliderDisplay('sl-sat','sv-sat'); }
+
+  // Compress slider
+  var slCompress = document.getElementById('sl-compress');
+  if (slCompress) { slCompress.value = s.compress || 0; updateSliderDisplay('sl-compress','sv-compress'); }
+
+  // Top margin
+  var slTopMargin = document.getElementById('sl-top-margin');
+  if (slTopMargin) { slTopMargin.value = s.topMargin || 0; updateSliderDisplay('sl-top-margin','sv-top-margin'); }
+
+  // Overlay opacity
+  var slOverlay = document.getElementById('sl-overlay-opacity');
+  if (slOverlay) { slOverlay.value = s.bgOverlayOpacity !== undefined ? s.bgOverlayOpacity : 0.55; updateSliderDisplay('sl-overlay-opacity','sv-overlay-opacity'); }
+
+  // BG blur
+  var slBgBlur = document.getElementById('sl-bg-blur');
+  if (slBgBlur) { slBgBlur.value = s.bgBlur || 0; updateSliderDisplay('sl-bg-blur','sv-bg-blur'); }
+
+  // Photo gradient
+  var slPgOpacity = document.getElementById('sl-pg-opacity');
+  if (slPgOpacity) { slPgOpacity.value = s.photoGradientOpacity !== undefined ? s.photoGradientOpacity : 0.28; updateSliderDisplay('sl-pg-opacity','sv-pg-opacity'); }
+  var selPg = document.getElementById('sel-photo-grad');
+  if (selPg) selPg.value = s.photoGradientIndex !== undefined ? s.photoGradientIndex : 1;
+
   updateMassVisibility();
 }
 
@@ -1557,6 +2028,20 @@ function updateSliderDisplay(sliderId, valueId) {
 // INITIALIZE
 // ============================================================
 function init() {
+  // Poblar select de gradientes de foto desde PHOTO_GRADIENTS
+  (function() {
+    var sel = document.getElementById('sel-photo-grad');
+    if (!sel || typeof PHOTO_GRADIENTS === 'undefined') return;
+    sel.innerHTML = '';
+    PHOTO_GRADIENTS.forEach(function(pg, idx) {
+      var opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = pg.name;
+      sel.appendChild(opt);
+    });
+    sel.value = S.photoGradientIndex || 1;
+  })();
+
   // Load default font pairing
   var defaultPairing = getFontPairingById(S.fontPairingId);
   loadFontPairing(defaultPairing, function(){
@@ -1598,7 +2083,27 @@ function init() {
     var reader = new FileReader();
     reader.onload = function(ev){
       S.photoDataURL = ev.target.result;
-      updatePreview();
+      // Pre-cargar la imagen en cache antes de renderizar
+      loadPhotoIntoCache(S.photoDataURL, function() {
+        updatePreview();
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Logo file input — removed (logo.png used directly)
+
+  // Fondo personalizado
+  document.getElementById('input-bg-image').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      S.bgCustomDataURL = ev.target.result;
+      S.background.type = 'image-custom';
+      // Elegir overlay random al cargar imagen nueva
+      S.bgOverlayIndex = randInt(0, BG_OVERLAYS.length - 1);
+      renderBackground();
     };
     reader.readAsDataURL(file);
   });
@@ -1638,12 +2143,23 @@ function init() {
   document.getElementById('btn-rand-mono').addEventListener('click', function(){
     randomizeMono(); updatePreview();
   });
+  document.getElementById('btn-logo-corner').addEventListener('click', function(){
+    cycleLogoCorner();
+  });
 
   // Download
   document.getElementById('btn-download').addEventListener('click', downloadPNG);
 
-  // Sliders for blocks
-  for (var i = 0; i < 5; i++) {
+  // Sliders para bloques
+  // Block 1 necesita reconstruir el canvas al cambiar tamaño
+  document.getElementById('sl-b1').addEventListener('input', function(){
+    S.bs[0] = parseFloat(this.value);
+    document.getElementById('sv-b1').textContent = S.bs[0].toFixed(2);
+    document.getElementById('esquela').style.setProperty('--bs1', S.bs[0]);
+    renderBlocks(); // reconstruye el canvas con nuevas dimensiones
+  });
+  // Bloques 2-5: solo CSS var (no necesitan reconstrucción de canvas)
+  for (var i = 1; i < 5; i++) {
     (function(idx){
       var sl = document.getElementById('sl-b' + (idx+1));
       var sv = document.getElementById('sv-b' + (idx+1));
@@ -1669,7 +2185,88 @@ function init() {
     renderMono();
   });
 
-  // Logo error handling
+  // Individual text size sliders
+  document.getElementById('sl-ts-name').addEventListener('input', function(){
+    S.tsName = parseFloat(this.value);
+    document.getElementById('sv-ts-name').textContent = S.tsName.toFixed(2);
+    document.getElementById('esquela').style.setProperty('--ts-name', S.tsName);
+  });
+  document.getElementById('sl-ts-extra').addEventListener('input', function(){
+    S.tsExtra = parseFloat(this.value);
+    document.getElementById('sv-ts-extra').textContent = S.tsExtra.toFixed(2);
+    document.getElementById('esquela').style.setProperty('--ts-extra', S.tsExtra);
+  });
+  document.getElementById('sl-ts-dates').addEventListener('input', function(){
+    S.tsDates = parseFloat(this.value);
+    document.getElementById('sv-ts-dates').textContent = S.tsDates.toFixed(2);
+    document.getElementById('esquela').style.setProperty('--ts-dates', S.tsDates);
+  });
+
+  // Saturation slider — debe reconstruir el canvas (ctx.filter se bake en pixels)
+  document.getElementById('sl-sat').addEventListener('input', function(){
+    S.photoSaturate = parseFloat(this.value);
+    document.getElementById('sv-sat').textContent = S.photoSaturate.toFixed(2);
+    renderBlocks();
+  });
+
+  // Gradiente de foto — select
+  document.getElementById('sel-photo-grad').addEventListener('change', function(){
+    S.photoGradientIndex = parseInt(this.value);
+    renderBlocks();
+  });
+
+  // Gradiente de foto — botón aleatorio
+  document.getElementById('btn-rand-photo-grad').addEventListener('click', function(){
+    var pgArr = (typeof PHOTO_GRADIENTS !== 'undefined') ? PHOTO_GRADIENTS : [];
+    if (pgArr.length > 0) {
+      S.photoGradientIndex = randInt(0, pgArr.length - 1);
+      document.getElementById('sel-photo-grad').value = S.photoGradientIndex;
+      renderBlocks();
+    }
+  });
+
+  // Gradiente de foto — opacidad
+  document.getElementById('sl-pg-opacity').addEventListener('input', function(){
+    S.photoGradientOpacity = parseFloat(this.value);
+    document.getElementById('sv-pg-opacity').textContent = S.photoGradientOpacity.toFixed(2);
+    renderBlocks();
+  });
+
+  // Botón gradiente aleatorio del fondo (solo cambia el overlay, no la imagen)
+  document.getElementById('btn-rand-bg-overlay').addEventListener('click', function(){
+    S.bgOverlayIndex = randInt(0, (BG_OVERLAYS ? BG_OVERLAYS.length - 1 : 19));
+    renderBackground();
+  });
+
+  // Compress slider
+  document.getElementById('sl-compress').addEventListener('input', function(){
+    S.compress = parseFloat(this.value);
+    document.getElementById('sv-compress').textContent = S.compress.toFixed(2);
+    document.getElementById('esquela').style.setProperty('--compress', S.compress);
+  });
+
+  // Top margin slider
+  document.getElementById('sl-top-margin').addEventListener('input', function(){
+    S.topMargin = parseInt(this.value);
+    document.getElementById('sv-top-margin').textContent = S.topMargin;
+    document.getElementById('esquela').style.setProperty('--top-margin', S.topMargin + 'px');
+  });
+
+  // Overlay opacity slider
+  document.getElementById('sl-overlay-opacity').addEventListener('input', function(){
+    S.bgOverlayOpacity = parseFloat(this.value);
+    document.getElementById('sv-overlay-opacity').textContent = S.bgOverlayOpacity.toFixed(2);
+    renderBackground();
+  });
+
+  // BG blur slider
+  document.getElementById('sl-bg-blur').addEventListener('input', function(){
+    S.bgBlur = parseFloat(this.value);
+    document.getElementById('sv-bg-blur').textContent = S.bgBlur.toFixed(1);
+    renderBackground();
+  });
+
+  // Logo error handling (logo.png no encontrado en el mismo directorio)
   document.getElementById('esq-logo').addEventListener('error', function(){
     this.style.display = 'none';
   });
