@@ -740,9 +740,9 @@ var BG_OVERLAYS = [
 // Los archivos deben estar en la carpeta "listones/" junto al HTML
 // ─────────────────────────────────────────────────────────────
 var LISTON_FILES = [
-  'listones/liston1.png',
-  'listones/liston2.png',
-  'listones/liston3.png'
+  'liston1.png',
+  'liston2.png',
+  'liston3.png'
 ];
 
 // ─────────────────────────────────────────────────────────────
